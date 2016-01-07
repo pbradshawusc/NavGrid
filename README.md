@@ -21,41 +21,42 @@ Coming Soon (TM)
 Usage
 =====
 
-Subclass NGNavigationController with your own custom class to use as the base controller for you class. Be sure to override viewDidLoad() *(calling super.viewDidLoad())* to add at least 1 initial view controller to the grid at index 0,0 (top left).
-Note that adding view controllers will work at any time and in any location, but an error of type NGGridError.ViewControllerAlreadyExists is thrown if a view controller already exists in that grid location.
-To access a controller at a specific location, you can use ngncGetNGViewControllerForLocation(x,y), which will return the view controller at grid position x, y if one exists, or throw an error of type NGGridError.ViewControllerDoesNotExist if one does not.
+Subclass NGNavigationController with your own custom class to use as the base controller for you class. Be sure to override `viewDidLoad()` **(calling super.viewDidLoad())** to add at least 1 initial view controller to the grid at index 0,0 (top left).
+Note that adding view controllers will work at any time and in any location, but an error of type `NGGridError.ViewControllerAlreadyExists` is thrown if a view controller already exists in that grid location.
 
-Additionally, you must subclass NGViewController with your own custom class and override the following four methods *(not calling super.METHODNAME)*:
-* viewWillBecomeActive()
-* viewDidBecomeActive()
-* viewWillResignActive()
-* viewDidResignActive()
+To access a controller at a specific location, you can use `ngncGetNGViewControllerForLocation(x,y)`, which will return the view controller at grid position x, y if one exists, or throw an error of type `NGGridError.ViewControllerDoesNotExist` if one does not.
+
+Additionally, you must subclass NGViewController with your own custom class and override the following four methods **(not calling super.METHODNAME)**:
+* `viewWillBecomeActive()`
+* `viewDidBecomeActive()`
+* `viewWillResignActive()`
+* `viewDidResignActive()`
 
 These four functions are used in place of view will/did appear/disappear. Since the view controllers are not being presented traditionally, these functions are used to communicate when each view controller will appear or disappear.
 
 Optionally, override the following functions to determine the behavior of the navigation buttons on the left and right of the navigation bar:
-* ngncLeftButtonTouchDownInside()
-* ngncLeftButtonTouchUpOutside()
-* ngncLeftButtonTouchUpInside()
-* ngncRightButtonTouchDownInside()
-* ngncRightButtonTouchUpOutside()
-* ngncRightButtonTouchUpInside()
+* `ngncLeftButtonTouchDownInside()`
+* `ngncLeftButtonTouchUpOutside()`
+* `ngncLeftButtonTouchUpInside()`
+* `ngncRightButtonTouchDownInside()`
+* `ngncRightButtonTouchUpOutside()`
+* `ngncRightButtonTouchUpInside()`
 
-In addition, you can create custom titles for each view by setting the property *mNGTitle* in your NGViewController subclass.
+In addition, you can create custom titles for each view by setting the property **mNGTitle** in your NGViewController subclass.
 
-*** Navigation
+### Navigation
 
 To navigate between the various view controllers in the grid, there are multiple routes.
 First, the following methods can be used anywhere to navigate in a certain direction:
-* cycleUp()
-* cycleDown()
-* cycleLeft()
-* cycleRight()
-These methods will move in the direction indicated (moving up/down/left/right view controllers rather than drag direction). These methods all throw an error of type NGGridError.GridMoveAttemptPastBounds if an invalid move is attempted.
+* `cycleUp()`
+* `cycleDown()`
+* `cycleLeft()`
+* `cycleRight()`
+These methods will move in the direction indicated (moving up/down/left/right view controllers rather than drag direction). These methods all throw an error of type `NGGridError.GridMoveAttemptPastBounds` if an invalid move is attempted.
 
-In addition, the method ngncNavigateToLocation(x,y) to navigate directly to the grid location x, y. This will not avoid gaps in the grid, however, and also will throw an error of type NGGridError.GridMoveAttemptPastBounds if no view controller exists at location x, y.
+In addition, the method `ngncNavigateToLocation(x,y)` to navigate directly to the grid location x, y. This will not avoid gaps in the grid, however, and also will throw an error of type `NGGridError.GridMoveAttemptPastBounds` if no view controller exists at location x, y.
 
-Scrolling through controllers by means of swiping is not enabled by default, but can be enabled by calling ngncEnableSwipeNavigation() and disabled (at a later point) by calling ngncDisableSwipeNavigation().
+Scrolling through controllers by means of swiping is not enabled by default, but can be enabled by calling `ngncEnableSwipeNavigation()` and disabled (at a later point) by calling `ngncDisableSwipeNavigation()`.
 
 Demo App
 ========
