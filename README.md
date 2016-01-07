@@ -71,5 +71,5 @@ My (rarely used) [Twitter](https://twitter.com/PatrickBUSC)
 License
 =======
 
-NavGrid is released under a GNU v3.0 license.
+NavGrid is released under a GPL v3.0 license.
 Copyright &copy; 2016-present Patrick Bradshaw
