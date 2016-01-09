@@ -70,6 +70,8 @@ class NavGridSampleNavigation : NGNavigationController {
             // Should never occur
             fatalError()
         }
+        
+        mNGRowsAligned = false
     }
     
     override func ngncLeftButtonTouchUpInside() {

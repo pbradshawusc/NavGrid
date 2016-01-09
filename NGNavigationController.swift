@@ -150,12 +150,13 @@ class NGNavigationController : UIViewController {
     // MARK: Grid Setup
     var mNGViewControllerGrid = Array<Array<NGViewController?>>()
     var mNGTopViewController = (0, 0)
+    var mNGTopVCForRow = Array<Int>()
     
     func ngncAppendNGViewControllerToLocation(x: Int, y: Int, vc: NGViewController) throws {
         // First check if a NGViewController already exists in this location, if so, throw an error
-        if mNGViewControllerGrid.count > x {
-            if mNGViewControllerGrid[x].count > y {
-                if mNGViewControllerGrid[x][y] != nil {
+        if mNGViewControllerGrid.count > y {
+            if mNGViewControllerGrid[y].count > x {
+                if mNGViewControllerGrid[y][x] != nil {
                     throw NGGridError.ViewControllerAlreadyExists
                 }
             }
@@ -169,19 +170,20 @@ class NGNavigationController : UIViewController {
         vc.view.frame = defaultFrame
         
         // Prime the arrays to the proper lengths for the new View Controller
-        if mNGViewControllerGrid.count <= x {
-            for _ in mNGViewControllerGrid.count - 1 ... x {
-                mNGViewControllerGrid.append(Array<NGViewController?>())
+        while mNGViewControllerGrid.count - 1 < y {
+            mNGViewControllerGrid.append(Array<NGViewController?>())
+            if mNGRowsAligned {
+                mNGTopVCForRow.append(mNGTopViewController.1)
+            } else {
+                mNGTopVCForRow.append(0)
             }
         }
-        if mNGViewControllerGrid[x].count <= y {
-            for _ in mNGViewControllerGrid[x].count - 1 ... y {
-                mNGViewControllerGrid[x].append(nil)
-            }
+        while mNGViewControllerGrid[y].count - 1 < x {
+            mNGViewControllerGrid[y].append(nil)
         }
         
         // Assign the View Controller and return it
-        mNGViewControllerGrid[x][y] = vc
+        mNGViewControllerGrid[y][x] = vc
         addChildViewController(vc)
         view.addSubview(vc.view)
         view.bringSubviewToFront(mNGNavigationHeader!)
@@ -191,14 +193,14 @@ class NGNavigationController : UIViewController {
     }
     
     func ngncGetNGViewControllerForLocation(x: Int, y: Int) throws -> NGViewController {
-        if mNGViewControllerGrid.count < x {
+        if mNGViewControllerGrid.count - 1 < y {
             throw NGGridError.ViewControllerDoesNotExist
-        } else if mNGViewControllerGrid[x].count < y {
+        } else if mNGViewControllerGrid[y].count - 1 < x {
             throw NGGridError.ViewControllerDoesNotExist
-        } else if mNGViewControllerGrid[x][y] == nil {
+        } else if mNGViewControllerGrid[y][x] == nil {
             throw NGGridError.ViewControllerDoesNotExist
         } else {
-            return mNGViewControllerGrid[x][y]!
+            return mNGViewControllerGrid[y][x]!
         }
     }
     
@@ -207,37 +209,48 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Navigation
+    var mNGRowsAligned = true
+    
     func ngncCycleLeft() throws {
-        if mNGTopViewController.1 == 0 {
+        if mNGTopViewController.0 == 0 {
             // Attempt to move left when already at absolute left edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1 - 1] == nil {
+        } else if mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 - 1] == nil {
             // Attempt to move left when already at local left edge
             throw NGGridError.GridMoveAttemptPastBounds
         }
         
         // Notify the view controllers that will appear and disappear
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1 - 1]?.viewWillBecomeActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 - 1]?.viewWillBecomeActive()
         
         // Cycle over all view controllers and shift them to the left by subframe width
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            for i in 0...self.mNGViewControllerGrid.count - 1 {
-                if self.mNGViewControllerGrid[i].count > 0 {
-                    for j in 0...self.mNGViewControllerGrid[i].count - 1 {
-                        if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
-                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.x += self.view.frame.width
+            if self.mNGRowsAligned {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count > 0 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.x += self.view.frame.width
+                            }
                         }
+                    }
+                }
+            } else {
+                for i in 0...self.mNGViewControllerGrid[self.mNGTopViewController.1].count - 1 {
+                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x += self.view.frame.width
                     }
                 }
             }
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1 - 1]?.viewDidBecomeActive()
-                self.mNGTopViewController.1 -= 1
-                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]!.requestTitle()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 - 1]?.viewDidBecomeActive()
+                self.mNGTopViewController.0 -= 1
+                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -245,36 +258,45 @@ class NGNavigationController : UIViewController {
     }
     
     func ngncCycleRight() throws {
-        if mNGTopViewController.1 == mNGViewControllerGrid[mNGTopViewController.0].count - 1 {
+        if mNGTopViewController.0 == mNGViewControllerGrid[mNGTopViewController.1].count - 1 {
             // Attempt to move right when already at absolute right edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1 + 1] == nil {
+        } else if mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 + 1] == nil {
             // Attempt to move right when already at local right edge
             throw NGGridError.GridMoveAttemptPastBounds
         }
         
         // Notify the view controllers that will appear and disappear
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1 + 1]?.viewWillBecomeActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 + 1]?.viewWillBecomeActive()
         
         // Cycle over all view controllers and shift them to the right by subframe width
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            for i in 0...self.mNGViewControllerGrid.count - 1 {
-                if self.mNGViewControllerGrid[i].count > 0 {
-                    for j in 0...self.mNGViewControllerGrid[i].count - 1 {
-                        if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
-                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= self.view.frame.width
+            if self.mNGRowsAligned {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count > 0 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= self.view.frame.width
+                            }
                         }
+                    }
+                }
+            } else {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x -= self.view.frame.width
                     }
                 }
             }
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1 + 1]?.viewDidBecomeActive()
-                self.mNGTopViewController.1 += 1
-                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]!.requestTitle()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 + 1]?.viewDidBecomeActive()
+                self.mNGTopViewController.0 += 1
+                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -282,20 +304,24 @@ class NGNavigationController : UIViewController {
     }
     
     func ngncCycleUp() throws {
-        if mNGTopViewController.0 == 0 {
+        if mNGTopViewController.1 == 0 {
             // Attempt to move up when already at absolute top edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if (mNGViewControllerGrid[mNGTopViewController.0 - 1].count - 1 >= mNGTopViewController.1) && (mNGViewControllerGrid[mNGTopViewController.0 - 1][mNGTopViewController.1] == nil) {
+        } else if (mNGViewControllerGrid[mNGTopViewController.1 - 1].count - 1 >= mNGTopViewController.0) && (mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopViewController.0] == nil) {
             // Attempt to move up when already at local top edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if mNGViewControllerGrid[mNGTopViewController.0 - 1].count < mNGTopViewController.1 {
+        } else if mNGViewControllerGrid[mNGTopViewController.1 - 1].count < mNGTopViewController.0 {
             // Attempt to move up when already at local top edge
             throw NGGridError.GridMoveAttemptPastBounds
         }
         
         // Notify the view controllers that will appear and disappear
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.0 - 1][mNGTopViewController.1]?.viewWillBecomeActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
+        if mNGRowsAligned {
+            mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopViewController.0]?.viewWillBecomeActive()
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopVCForRow[mNGTopViewController.1 - 1]]?.viewWillBecomeActive()
+        }
         
         // Cycle over all view controllers and shift them down by subframe height
         UIView.animateWithDuration(0.25, animations: { () -> Void in
@@ -311,10 +337,15 @@ class NGNavigationController : UIViewController {
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.0 - 1][self.mNGTopViewController.1]?.viewDidBecomeActive()
-                self.mNGTopViewController.0 -= 1
-                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]!.requestTitle()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                if self.mNGRowsAligned {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 - 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 - 1][self.mNGTopVCForRow[self.mNGTopViewController.1 - 1]]?.viewDidBecomeActive()
+                    self.mNGTopViewController.0 = self.mNGTopVCForRow[self.mNGTopViewController.1 - 1]
+                }
+                self.mNGTopViewController.1 -= 1
+                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -322,20 +353,24 @@ class NGNavigationController : UIViewController {
     }
     
     func ngncCycleDown() throws {
-        if mNGTopViewController.0 == mNGViewControllerGrid.count - 1 {
+        if mNGTopViewController.1 == mNGViewControllerGrid.count - 1 {
             // Attempt to move down when already at absolute bottom edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if (mNGViewControllerGrid[mNGTopViewController.0 + 1].count - 1 >= mNGTopViewController.1) && (mNGViewControllerGrid[mNGTopViewController.0 + 1][mNGTopViewController.1] == nil) {
+        } else if (mNGViewControllerGrid[mNGTopViewController.1 + 1].count - 1 >= mNGTopViewController.0) && (mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopViewController.0] == nil) {
             // Attempt to move down when already at local bottom edge
             throw NGGridError.GridMoveAttemptPastBounds
-        } else if mNGViewControllerGrid[mNGTopViewController.0 + 1].count - 1 < mNGTopViewController.1 {
+        } else if mNGViewControllerGrid[mNGTopViewController.1 + 1].count - 1 < mNGTopViewController.0 {
             // Attempt to move down when already at local bottom edge
             throw NGGridError.GridMoveAttemptPastBounds
         }
         
         // Notify the view controllers that will appear and disappear
-        mNGViewControllerGrid[mNGTopViewController.0][mNGTopViewController.1]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.0 + 1][mNGTopViewController.1]?.viewWillBecomeActive()
+        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
+        if mNGRowsAligned {
+            mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopViewController.0]?.viewWillBecomeActive()
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopVCForRow[mNGTopViewController.1 + 1]]?.viewWillBecomeActive()
+        }
         
         // Cycle over all view controllers and shift them up by subframe height
         UIView.animateWithDuration(0.25, animations: { () -> Void in
@@ -351,10 +386,15 @@ class NGNavigationController : UIViewController {
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
-                self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.0 + 1][self.mNGTopViewController.1]?.viewDidBecomeActive()
-                self.mNGTopViewController.0 += 1
-                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.0][self.mNGTopViewController.1]!.requestTitle()
+                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                if self.mNGRowsAligned {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 + 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 + 1][self.mNGTopVCForRow[self.mNGTopViewController.1 + 1]]?.viewDidBecomeActive()
+                    self.mNGTopViewController.0 = self.mNGTopVCForRow[self.mNGTopViewController.1 + 1]
+                }
+                self.mNGTopViewController.1 += 1
+                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
