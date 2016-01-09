@@ -15,6 +15,15 @@ enum NGGridError: ErrorType {
     case GridMoveAttemptPastBounds
 }
 
+protocol NGNavigationButtonDelegate {
+    func ngdLeftButtonTouchDown()
+    func ngdLeftButtonTouchUpOutside()
+    func ngdLeftButtonTouchUpInside()
+    func ngdRightButtonTouchDown()
+    func ngdRightButtonTouchUpOutside()
+    func ngdRightButtonTouchUpInside()
+}
+
 class NGNavigationController : UIViewController {
     // MARK: Initialization
     var mNGInitialized = false
@@ -48,6 +57,7 @@ class NGNavigationController : UIViewController {
     var mNGLeftButton : UIButton?
     var mNGRightButton : UIButton?
     var mNGCenterLabel : UILabel?
+    var mNGButtonDelegate : NGNavigationButtonDelegate?
     
     func ngncResetNavigationHeaderToDefaults() {
         // Clear the old header if one exists
@@ -115,28 +125,32 @@ class NGNavigationController : UIViewController {
         mNGStatusBarBackground?.backgroundColor = color
     }
     
-    func ngncLeftButtonTouchDown() {
-        // STUB
+    func ngncSetDelegate(delegate: NGNavigationButtonDelegate) {
+        mNGButtonDelegate = delegate
     }
     
-    func ngncLeftButtonTouchUpOutside() {
-        // STUB
+    internal func ngncLeftButtonTouchDown() {
+        mNGButtonDelegate?.ngdLeftButtonTouchDown()
     }
     
-    func ngncLeftButtonTouchUpInside() {
-        // STUB
+    internal func ngncLeftButtonTouchUpOutside() {
+        mNGButtonDelegate?.ngdLeftButtonTouchUpOutside()
     }
     
-    func ngncRightButtonTouchDown() {
-        // STUB
+    internal func ngncLeftButtonTouchUpInside() {
+        mNGButtonDelegate?.ngdLeftButtonTouchUpInside()
     }
     
-    func ngncRightButtonTouchUpOutside() {
-        // STUB
+    internal func ngncRightButtonTouchDown() {
+        mNGButtonDelegate?.ngdRightButtonTouchDown()
     }
     
-    func ngncRightButtonTouchUpInside() {
-        // STUB
+    internal func ngncRightButtonTouchUpOutside() {
+        mNGButtonDelegate?.ngdRightButtonTouchUpOutside()
+    }
+    
+    internal func ngncRightButtonTouchUpInside() {
+        mNGButtonDelegate?.ngdRightButtonTouchUpInside()
     }
     
     override func preferredStatusBarStyle() -> UIStatusBarStyle {
@@ -209,7 +223,52 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Navigation
-    var mNGRowsAligned = true
+    internal var mNGRowsAligned = true
+    
+    func ngncSetRowsAligned(aligned: Bool, animated: Bool) {
+        if mNGRowsAligned == aligned {
+            return
+        }
+        
+        mNGRowsAligned = aligned
+        if mNGRowsAligned {
+            // Set the locations of all view controllers in the grid relative to the current top view controller
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    for i in 0...self.mNGViewControllerGrid.count - 1 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i][j] != nil && !(i == self.mNGTopViewController.1 && j == self.mNGTopViewController.0) {
+                                // This is a valid view controller, set its new location
+                                let xDist = CGFloat(j - self.mNGTopViewController.0)
+                                // Negative xDist corresponds to a controller to the right of the top controller
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.x = (xDist * self.view.frame.width)
+                            }
+                        }
+                    }
+                    }, completion: { (completed) -> Void in
+                        for i in 0...self.mNGTopVCForRow.count - 1 {
+                            self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                        }
+                })
+            } else {
+                for i in 0...mNGViewControllerGrid.count - 1 {
+                    for j in 0...mNGViewControllerGrid[i].count - 1 {
+                        if mNGViewControllerGrid[i][j] != nil && !(i == mNGTopViewController.1 && j == mNGTopViewController.0) {
+                            // This is a valid view controller, set its new location
+                            let xDist = CGFloat(j - self.mNGTopViewController.0)
+                            // Negative xDist corresponds to a controller to the right of the top controller
+                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.x = (xDist * self.view.frame.width)
+                        }
+                    }
+                }
+                
+                // Now reset the top view controller for each row to the current top view controller's column
+                for i in 0...mNGTopVCForRow.count - 1 {
+                    mNGTopVCForRow[i] = mNGTopViewController.0
+                }
+            }
+        }
+    }
     
     func ngncCycleLeft() throws {
         if mNGTopViewController.0 == 0 {
@@ -251,6 +310,11 @@ class NGNavigationController : UIViewController {
                 self.mNGTopViewController.0 -= 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
+                if self.mNGRowsAligned {
+                    for i in 0...self.mNGViewControllerGrid.count-1 {
+                        self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                    }
+                }
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -297,6 +361,11 @@ class NGNavigationController : UIViewController {
                 self.mNGTopViewController.0 += 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
+                if self.mNGRowsAligned {
+                    for i in 0...self.mNGViewControllerGrid.count-1 {
+                        self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                    }
+                }
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -461,6 +530,7 @@ class NGNavigationController : UIViewController {
                     }
                     self.mNGCenterLabel?.alpha = 0.0
                     }, completion: { (verticalMoveCompleted) -> Void in
+                        // Next navigate to the proper column
                         UIView.animateWithDuration(0.15, animations: { () -> Void in
                             for i in 0...self.mNGViewControllerGrid[y].count - 1 {
                                 if self.mNGViewControllerGrid[y][i] != nil {
@@ -491,6 +561,7 @@ class NGNavigationController : UIViewController {
                     }
                     self.mNGCenterLabel?.alpha = 0.0
                     }, completion: { (verticalMoveCompleted) -> Void in
+                        // Here we are already at the proper column
                         self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
                         self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
                         self.mNGTopViewController = (x, y)
@@ -501,6 +572,7 @@ class NGNavigationController : UIViewController {
                         })
                 })
             }else if yDist == 0 {
+                // We are already at the proper row, so simply navigate to the proper column
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     for i in 0...self.mNGViewControllerGrid[y].count - 1 {
                         if self.mNGViewControllerGrid[y][i] != nil {

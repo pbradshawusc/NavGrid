@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class NavGridSampleNavigation : NGNavigationController {
+class NavGridSampleNavigation : NGNavigationController, NGNavigationButtonDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -61,6 +61,9 @@ class NavGridSampleNavigation : NGNavigationController {
         // Enable swipe transitions
         ngncEnableSwipeNavigation()
         
+        // Set our button delegate
+        ngncSetDelegate(self)
+        
         // Navigate to starting page
         do {
             try ngncNavigateToLocation(0, y: 0)
@@ -71,25 +74,52 @@ class NavGridSampleNavigation : NGNavigationController {
             fatalError()
         }
         
-        mNGRowsAligned = false
+        // Set our rows to be disaligned
+        ngncSetRowsAligned(false, animated: true)
     }
     
-    override func ngncLeftButtonTouchUpInside() {
+    // MARK: Delegate Methods
+    func ngdLeftButtonTouchDown() {
+        // STUB
+    }
+    
+    func ngdLeftButtonTouchUpOutside() {
+        // STUB
+    }
+    
+    func ngdLeftButtonTouchUpInside() {
+        // Toggle row alignment
+        ngncSetRowsAligned(!mNGRowsAligned, animated: true)
+        
+        /*
         do {
             try ngncNavigateToLocation(0, y: 0)
         } catch NGGridError.GridMoveAttemptPastBounds {
             // We are already at the right edge
+        } catch NGGridError.ViewControllerDoesNotExist {
+            // The requested move location is not a valid view controller
         } catch {
             // Should never occur
             fatalError()
         }
+        */
     }
     
-    override func ngncRightButtonTouchUpInside() {
+    func ngdRightButtonTouchDown() {
+        // STUB
+    }
+    
+    func ngdRightButtonTouchUpOutside() {
+        // STUB
+    }
+    
+    func ngdRightButtonTouchUpInside() {
         do {
             try ngncNavigateToLocation(1, y: 1)
         } catch NGGridError.GridMoveAttemptPastBounds {
             // We are already at the bottom edge
+        } catch NGGridError.ViewControllerDoesNotExist {
+            // The requested move location is not a valid view controller
         } catch {
             // Should never occur
             fatalError()
