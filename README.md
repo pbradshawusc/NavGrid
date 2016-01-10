@@ -2,7 +2,7 @@
 ### Created by: Patrick Bradshaw (Github: @pbradshawusc)
 
 > The Navigation Grid is a grid-style navigation controller for iOS written in Swift 2.0.
-> The purpose of this element is for smooth and intuitive navigation through related view controllers in a synchronized grid pattern.
+> The purpose of this element is for smooth and intuitive navigation through related view controllers in an aligned or disaligned grid pattern.
 
 Installation
 ============
@@ -24,7 +24,7 @@ Usage
 Subclass NGNavigationController with your own custom class to use as the base controller for you class. Be sure to override `viewDidLoad()` **(calling super.viewDidLoad())** to add at least 1 initial view controller to the grid at index 0,0 (top left).
 Note that adding view controllers will work at any time and in any location, but an error of type `NGGridError.ViewControllerAlreadyExists` is thrown if a view controller already exists in that grid location.
 
-To access a controller at a specific location, you can use `ngncGetNGViewControllerForLocation(x,y)`, which will return the view controller at grid position x, y if one exists, or throw an error of type `NGGridError.ViewControllerDoesNotExist` if one does not.
+To access a controller at a specific location, you can use `ngncGetNGViewControllerForLocation(x,y)`, which will return the view controller at grid position x, y if one exists, or throw an error of type `NGGridError.ViewControllerDoesNotExist` if one does not. *Note that x refers to the x index of the view controller in the grid which is the position within a row. Y refers to the y index of the view controller in the grid which is the row that the view controller belongs to. In addition, these grid indices do not change with swiping (either aligned or disaligned) so it is possible for index (0,0) to be directly above (4,1) when the rows are disaligned.*
 
 Additionally, you must subclass NGViewController with your own custom class and override the following four methods **(not calling super.METHODNAME)**:
 * `viewWillBecomeActive()`
@@ -33,6 +33,8 @@ Additionally, you must subclass NGViewController with your own custom class and 
 * `viewDidResignActive()`
 
 These four functions are used in place of view will/did appear/disappear. Since the view controllers are not being presented traditionally, these functions are used to communicate when each view controller will appear or disappear.
+
+The grid is set to default to an aligned grid pattern. If you would like to switch to a disaligned pattern (rows independent from each other), you may do so by calling `ngncSetRowsAligned(true, animated: Bool)`. This can be called at any time to alternate between aligned and disaligned rows (*Note that when switching to an aligned grid, the offset alignment of your view controllers will be lost, even when switching back to a disaligned pattern*). Disalignment for columns is a feature that will be coming in a future release soon! (Allowing for multiple side-by-side vertical scrolls).
 
 Optionally, override the following functions to determine the behavior of the navigation buttons on the left and right of the navigation bar:
 * `ngncLeftButtonTouchDownInside()`
@@ -61,7 +63,7 @@ Scrolling through controllers by means of swiping is not enabled by default, but
 Demo App
 ========
 
-The included project has a sample application with 9 colored screens and a few snap navigations included. Feel free to build off of this project or look at the code for samples of usage.
+The included project has a sample application with 9 colored screens and a snap navigation and align/disalign alternation included. The Search button will snap to the Search View Controller and the Profile icon will alternate between aligned and disaligned rows. Feel free to build off of this project or look at the code for samples of usage.
 
 Contact
 =======

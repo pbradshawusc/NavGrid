@@ -26,7 +26,7 @@ protocol NGNavigationButtonDelegate {
 
 class NGNavigationController : UIViewController {
     // MARK: Initialization
-    var mNGInitialized = false
+    internal var mNGInitialized = false
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         ngncInitializationImplementation()
@@ -37,7 +37,7 @@ class NGNavigationController : UIViewController {
         ngncInitializationImplementation()
     }
     
-    func ngncInitializationImplementation() {
+    internal func ngncInitializationImplementation() {
         if !mNGInitialized {
             mNGInitialized = true
             
@@ -50,14 +50,14 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Top Navigation Bar
-    let mNGNavBarHeight = CGFloat(44)
-    var mNGNavigationHeader : UIView?
-    var mNGStatusBarBackground : UIView?
-    var mNGLightStatusBar = true
-    var mNGLeftButton : UIButton?
-    var mNGRightButton : UIButton?
-    var mNGCenterLabel : UILabel?
-    var mNGButtonDelegate : NGNavigationButtonDelegate?
+    internal let mNGNavBarHeight = CGFloat(44)
+    internal var mNGNavigationHeader : UIView?
+    internal var mNGStatusBarBackground : UIView?
+    internal var mNGLightStatusBar = true
+    internal var mNGLeftButton : UIButton?
+    internal var mNGRightButton : UIButton?
+    internal var mNGCenterLabel : UILabel?
+    internal var mNGButtonDelegate : NGNavigationButtonDelegate?
     
     func ngncResetNavigationHeaderToDefaults() {
         // Clear the old header if one exists
@@ -121,12 +121,61 @@ class NGNavigationController : UIViewController {
         mNGNavigationHeader?.backgroundColor = color
     }
     
-    func ngncSetNavigationHeaderStatusBarColor(color: UIColor) {
+    func ngncSetNavigationHeaderStatusBarColor(color: UIColor, lightBackground: Bool = true) {
         mNGStatusBarBackground?.backgroundColor = color
+        mNGLightStatusBar = !lightBackground
     }
     
     func ngncSetDelegate(delegate: NGNavigationButtonDelegate) {
         mNGButtonDelegate = delegate
+    }
+    
+    func ngncShowLeftButton(show: Bool, animated: Bool) {
+        if show == mNGLeftButton!.hidden {
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    self.mNGLeftButton?.hidden = !show
+                })
+            } else {
+                mNGLeftButton?.hidden = !show
+            }
+        }
+    }
+    
+    func ngncEnableLeftButton(enable: Bool, animated: Bool) {
+        if enable != mNGLeftButton!.enabled {
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    self.mNGLeftButton?.enabled = enable
+                })
+            } else {
+                mNGLeftButton?.enabled = !enable
+            }
+        }
+    }
+    
+    func ngncSetLeftButton(image: UIImage? = nil, title: String? = nil, state: UIControlState = .Normal, backgroundColor: UIColor? = nil, rounded: Bool = false) {
+        if image != nil {
+            mNGLeftButton?.setImage(image, forState: state)
+        } else if title != nil {
+            mNGLeftButton?.setTitle(title, forState: state)
+        }
+        
+        if backgroundColor != nil {
+            mNGLeftButton?.backgroundColor = backgroundColor!
+        }
+        
+        if rounded {
+            mNGLeftButton?.layer.masksToBounds = true
+            mNGLeftButton?.layer.cornerRadius = min(mNGLeftButton!.frame.size.height, mNGLeftButton!.frame.size.width) / 4.0
+        } else {
+            mNGLeftButton?.layer.cornerRadius = 0
+        }
+    }
+    
+    func ngncGetLeftButton() -> UIButton? {
+        // This is used for any advanced button customization beyond what is offered via the set function
+        return mNGLeftButton
     }
     
     internal func ngncLeftButtonTouchDown() {
@@ -139,6 +188,54 @@ class NGNavigationController : UIViewController {
     
     internal func ngncLeftButtonTouchUpInside() {
         mNGButtonDelegate?.ngdLeftButtonTouchUpInside()
+    }
+    
+    func ngncShowRightButton(show: Bool, animated: Bool) {
+        if show == mNGRightButton!.hidden {
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    self.mNGRightButton?.hidden = !show
+                })
+            } else {
+                mNGRightButton?.hidden = !show
+            }
+        }
+    }
+    
+    func ngncEnableRightButton(enable: Bool, animated: Bool) {
+        if enable != mNGRightButton!.enabled {
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    self.mNGRightButton?.enabled = enable
+                })
+            } else {
+                mNGRightButton?.enabled = !enable
+            }
+        }
+    }
+    
+    func ngncSetRightButton(image: UIImage? = nil, title: String? = nil, state: UIControlState = .Normal, backgroundColor: UIColor? = nil, rounded: Bool = false) {
+        if image != nil {
+            mNGRightButton?.setImage(image, forState: state)
+        } else if title != nil {
+            mNGRightButton?.setTitle(title, forState: state)
+        }
+        
+        if backgroundColor != nil {
+            mNGRightButton?.backgroundColor = backgroundColor!
+        }
+        
+        if rounded {
+            mNGRightButton?.layer.masksToBounds = true
+            mNGRightButton?.layer.cornerRadius = min(mNGRightButton!.frame.size.height, mNGRightButton!.frame.size.width) / 4.0
+        } else {
+            mNGRightButton?.layer.cornerRadius = 0
+        }
+    }
+    
+    func ngncGetRightButton() -> UIButton? {
+        // This is used for any advanced button customization beyond what is offered via the set function
+        return mNGRightButton
     }
     
     internal func ngncRightButtonTouchDown() {
@@ -162,9 +259,9 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Setup
-    var mNGViewControllerGrid = Array<Array<NGViewController?>>()
-    var mNGTopViewController = (0, 0)
-    var mNGTopVCForRow = Array<Int>()
+    internal var mNGViewControllerGrid = Array<Array<NGViewController?>>()
+    internal var mNGTopViewController = (0, 0)
+    internal var mNGTopVCForRow = Array<Int>()
     
     func ngncAppendNGViewControllerToLocation(x: Int, y: Int, vc: NGViewController) throws {
         // First check if a NGViewController already exists in this location, if so, throw an error
@@ -509,6 +606,9 @@ class NGNavigationController : UIViewController {
                     self.mNGTopViewController = (x, y)
                     self.mNGTopVCForRow[y] = x
                     self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                    for i in 0...self.mNGTopVCForRow.count - 1 {
+                        self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                    }
                     UIView.animateWithDuration(0.15, animations: { () -> Void in
                         self.mNGCenterLabel?.alpha = 1.0
                     })
@@ -594,35 +694,37 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Swipe Navigation
-    var mNGSwipeView : UIView?
+    internal var mNGSwipeView : UIView?
     
     func ngncEnableSwipeNavigation() {
-        // Create the swipe view
-        mNGSwipeView = UIView(frame: CGRectMake(0, ngncGetNavBarHeightWithStatusBar(), view.frame.width, view.frame.height - ngncGetNavBarHeightWithStatusBar()))
-        mNGSwipeView?.backgroundColor = UIColor.clearColor()
-        mNGSwipeView?.userInteractionEnabled = true
-        
-        let leftSwipeRec = UISwipeGestureRecognizer()
-        leftSwipeRec.direction = .Left
-        leftSwipeRec.addTarget(self, action: "ngncSwipedLeft")
-        mNGSwipeView?.addGestureRecognizer(leftSwipeRec)
-        
-        let rightSwipeRec = UISwipeGestureRecognizer()
-        rightSwipeRec.direction = .Right
-        rightSwipeRec.addTarget(self, action: "ngncSwipedRight")
-        mNGSwipeView?.addGestureRecognizer(rightSwipeRec)
-        
-        let upSwipeRec = UISwipeGestureRecognizer()
-        upSwipeRec.direction = .Up
-        upSwipeRec.addTarget(self, action: "ngncSwipedUp")
-        mNGSwipeView?.addGestureRecognizer(upSwipeRec)
-        
-        let downSwipeRec = UISwipeGestureRecognizer()
-        downSwipeRec.direction = .Down
-        downSwipeRec.addTarget(self, action: "ngncSwipedDown")
-        mNGSwipeView?.addGestureRecognizer(downSwipeRec)
-        
-        view.addSubview(mNGSwipeView!)
+        if mNGSwipeView == nil {
+            // Create the swipe view
+            mNGSwipeView = UIView(frame: CGRectMake(0, ngncGetNavBarHeightWithStatusBar(), view.frame.width, view.frame.height - ngncGetNavBarHeightWithStatusBar()))
+            mNGSwipeView?.backgroundColor = UIColor.clearColor()
+            mNGSwipeView?.userInteractionEnabled = true
+            
+            let leftSwipeRec = UISwipeGestureRecognizer()
+            leftSwipeRec.direction = .Left
+            leftSwipeRec.addTarget(self, action: "ngncSwipedLeft")
+            mNGSwipeView?.addGestureRecognizer(leftSwipeRec)
+            
+            let rightSwipeRec = UISwipeGestureRecognizer()
+            rightSwipeRec.direction = .Right
+            rightSwipeRec.addTarget(self, action: "ngncSwipedRight")
+            mNGSwipeView?.addGestureRecognizer(rightSwipeRec)
+            
+            let upSwipeRec = UISwipeGestureRecognizer()
+            upSwipeRec.direction = .Up
+            upSwipeRec.addTarget(self, action: "ngncSwipedUp")
+            mNGSwipeView?.addGestureRecognizer(upSwipeRec)
+            
+            let downSwipeRec = UISwipeGestureRecognizer()
+            downSwipeRec.direction = .Down
+            downSwipeRec.addTarget(self, action: "ngncSwipedDown")
+            mNGSwipeView?.addGestureRecognizer(downSwipeRec)
+            
+            view.addSubview(mNGSwipeView!)
+        }
     }
     
     func ngncDisableSwipeNavigation() {
@@ -630,7 +732,7 @@ class NGNavigationController : UIViewController {
         mNGSwipeView = nil
     }
     
-    func ngncSwipedLeft() {
+    internal func ngncSwipedLeft() {
         do {
             try ngncCycleRight()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -641,7 +743,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    func ngncSwipedRight() {
+    internal func ngncSwipedRight() {
         do {
             try ngncCycleLeft()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -652,7 +754,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    func ngncSwipedUp() {
+    internal func ngncSwipedUp() {
         do {
             try ngncCycleDown()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -663,7 +765,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    func ngncSwipedDown() {
+    internal func ngncSwipedDown() {
         do {
             try ngncCycleUp()
         } catch NGGridError.GridMoveAttemptPastBounds {
