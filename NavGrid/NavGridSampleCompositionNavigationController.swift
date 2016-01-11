@@ -1,17 +1,22 @@
 //
-//  NavGridSampleUse.swift
+//  NavGridSampleCompositionNavigationController.swift
 //  NavGrid
 //
-//  Created by Patrick Bradshaw on 1/6/16.
+//  Created by Patrick Bradshaw on 1/10/16.
 //  Copyright © 2016 Patrick Bradshaw. All rights reserved.
 //
 
 import Foundation
 import UIKit
 
-class NavGridSampleNavigation : NGNavigationController {
+class NavGridSampleCompositionNavigationController : UIViewController, NGNavigationButtonDelegate {
+    let mNavGrid = NGNavigationController()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Load our NavGrid into our view
+        view.addSubview(mNavGrid.view)
         
         // Implement your own behavior for adding view controllers here
         let colorArray = [[UIColor.blackColor(), UIColor.greenColor(), UIColor.yellowColor()], [UIColor.grayColor(), UIColor.purpleColor(), UIColor.orangeColor()], [UIColor.blueColor(), UIColor.brownColor(), UIColor.darkGrayColor()]]
@@ -28,7 +33,7 @@ class NavGridSampleNavigation : NGNavigationController {
                     // Set up our two named controllers for reference purposes
                     if i == 0 && j == 0 {
                         let label = UILabel(frame: colorView.view.frame)
-                        label.frame.size.height -= ngncGetNavBarHeightWithStatusBar()
+                        label.frame.size.height -= mNavGrid.ngncGetNavBarHeightWithStatusBar()
                         label.backgroundColor = UIColor.clearColor()
                         label.textColor = UIColor.whiteColor()
                         label.text = "Profile"
@@ -38,7 +43,7 @@ class NavGridSampleNavigation : NGNavigationController {
                         colorView.view.addSubview(label)
                     } else if i == 1 && j == 1 {
                         let label = UILabel(frame: colorView.view.frame)
-                        label.frame.size.height -= ngncGetNavBarHeightWithStatusBar()
+                        label.frame.size.height -= mNavGrid.ngncGetNavBarHeightWithStatusBar()
                         label.backgroundColor = UIColor.clearColor()
                         label.textColor = UIColor.whiteColor()
                         label.text = "Search"
@@ -49,7 +54,7 @@ class NavGridSampleNavigation : NGNavigationController {
                     }
                     
                     // Actually append the view controller (we do this last so that we can use the original frame anchored at 0,0 in our label creation rather than the newly assigned frame uppon appending to the grid)
-                    try ngncAppendNGViewControllerToLocation(i, y: j, vc: colorView)
+                    try mNavGrid.ngncAppendNGViewControllerToLocation(i, y: j, vc: colorView)
                 } catch NGGridError.ViewControllerAlreadyExists {
                     // This will occur if a view controller already exists at this location
                 } catch {
@@ -59,31 +64,48 @@ class NavGridSampleNavigation : NGNavigationController {
         }
         
         // Enable swipe transitions
-        ngncEnableSwipeNavigation()
+        mNavGrid.ngncEnableSwipeNavigation()
+        
+        // Set our button delegate
+        mNavGrid.ngncSetDelegate(self)
         
         // Navigate to starting page
         do {
-            try ngncNavigateToLocation(0, y: 0)
+            try mNavGrid.ngncNavigateToLocation(0, y: 0)
         } catch NGGridError.GridMoveAttemptPastBounds {
             // We are already at the right edge
+        } catch NGGridError.ViewControllerDoesNotExist {
+            // We attempted to move to a grid location that contains no view controller
         } catch {
             // Should never occur
             fatalError()
         }
         
         // Set our rows to be disaligned
-        ngncSetRowsAligned(false, animated: true)
+        mNavGrid.ngncSetRowsAligned(false, animated: true)
     }
     
-    // MARK: Button Methods
-    override func ngncLeftButtonTouchUpInside() {
+    // MARK: Button Delegate Methods
+    func ngdLeftButtonTouchDown() {
+        // STUB
+    }
+    func ngdLeftButtonTouchUpOutside() {
+        // STUB
+    }
+    func ngdLeftButtonTouchUpInside() {
         // Toggle row alignment
-        ngncSetRowsAligned(!mNGRowsAligned, animated: true)
+        mNavGrid.ngncSetRowsAligned(!mNavGrid.mNGRowsAligned, animated: true)
     }
-    
-    override func ngncRightButtonTouchUpInside() {
+    func ngdRightButtonTouchDown() {
+        // STUB
+    }
+    func ngdRightButtonTouchUpOutside() {
+        // STUB
+    }
+    func ngdRightButtonTouchUpInside() {
+        // STUB
         do {
-            try ngncNavigateToLocation(1, y: 1)
+            try mNavGrid.ngncNavigateToLocation(1, y: 1)
         } catch NGGridError.GridMoveAttemptPastBounds {
             // We are already at the bottom edge
         } catch NGGridError.ViewControllerDoesNotExist {

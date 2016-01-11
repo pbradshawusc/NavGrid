@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		24A7C71A1C43687700DCFBE7 /* NavGridSampleCompositionNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24A7C7191C43687700DCFBE7 /* NavGridSampleCompositionNavigationController.swift */; };
 		24AD49141C3DDFE500ACDF3A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24AD49131C3DDFE500ACDF3A /* AppDelegate.swift */; };
 		24AD49191C3DDFE500ACDF3A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24AD49171C3DDFE500ACDF3A /* Main.storyboard */; };
 		24AD491B1C3DDFE500ACDF3A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24AD491A1C3DDFE500ACDF3A /* Assets.xcassets */; };
@@ -18,6 +19,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		24A7C7191C43687700DCFBE7 /* NavGridSampleCompositionNavigationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavGridSampleCompositionNavigationController.swift; sourceTree = "<group>"; };
 		24AD49101C3DDFE500ACDF3A /* NavGrid.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NavGrid.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24AD49131C3DDFE500ACDF3A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		24AD49181C3DDFE500ACDF3A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 			children = (
 				24AD492B1C3E295600ACDF3A /* NavGridSampleNavigation.swift */,
 				24AD492D1C3E299600ACDF3A /* NavGridSampleViewController.swift */,
+				24A7C7191C43687700DCFBE7 /* NavGridSampleCompositionNavigationController.swift */,
 			);
 			name = NavGridSample;
 			sourceTree = "<group>";
@@ -163,6 +166,7 @@
 			files = (
 				24AD49291C3DE03100ACDF3A /* NGViewController.swift in Sources */,
 				24AD49271C3DE02600ACDF3A /* NGNavigationController.swift in Sources */,
+				24A7C71A1C43687700DCFBE7 /* NavGridSampleCompositionNavigationController.swift in Sources */,
 				24AD492E1C3E299600ACDF3A /* NavGridSampleViewController.swift in Sources */,
 				24AD49141C3DDFE500ACDF3A /* AppDelegate.swift in Sources */,
 				24AD492C1C3E295600ACDF3A /* NavGridSampleNavigation.swift in Sources */,
@@ -313,6 +317,7 @@
 				24AD49241C3DDFE500ACDF3A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

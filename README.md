@@ -21,9 +21,16 @@ Coming Soon (TM)
 Usage
 =====
 
-Subclass NGNavigationController with your own custom class to use as the base controller for you class. Be sure to override `viewDidLoad()` **(calling super.viewDidLoad())** to add at least 1 initial view controller to the grid at index 0,0 (top left).
+> There are two ways to implement the NavGrid, via Composition and Inheritance. Both ways are outlined below, and both are included in order to allow you to use NavGrid in your accustomed style. Personally, I recommend the Inheritance model as it allows you to expand on the functionality directly and override functions if you wish to alter their effect rather than simply augment it. However, the composition method is much safer from accidentally breaking any base functionality of the NavGrid itself.
+
+#### Composition
+Simply instantiate a `NGNavigationController` within your active view controller and add the NGNavigationController's view to your view controller's view. You can then use your NavGrid as outlined below
+
+#### Inheritance
+Subclass `NGNavigationController` with your own custom class to use as the base controller for you class. Be sure to override `viewDidLoad()` **(calling super.viewDidLoad())** to add at least 1 initial view controller to the grid at index 0,0 (top left).
 Note that adding view controllers will work at any time and in any location, but an error of type `NGGridError.ViewControllerAlreadyExists` is thrown if a view controller already exists in that grid location.
 
+#### Usage Beyond Initialization
 To access a controller at a specific location, you can use `ngncGetNGViewControllerForLocation(x,y)`, which will return the view controller at grid position x, y if one exists, or throw an error of type `NGGridError.ViewControllerDoesNotExist` if one does not. *Note that x refers to the x index of the view controller in the grid which is the position within a row. Y refers to the y index of the view controller in the grid which is the row that the view controller belongs to. In addition, these grid indices do not change with swiping (either aligned or disaligned) so it is possible for index (0,0) to be directly above (4,1) when the rows are disaligned.*
 
 Additionally, you must subclass NGViewController with your own custom class and override the following four methods **(not calling super.METHODNAME)**:
@@ -43,6 +50,14 @@ Optionally, override the following functions to determine the behavior of the na
 * `ngncRightButtonTouchDownInside()`
 * `ngncRightButtonTouchUpOutside()`
 * `ngncRightButtonTouchUpInside()`
+
+Note that if you are using the Composition method, you will need to instead implement the `NGNavigationButtonDelegate` protocol in whatever class you wish to be the delegate for the button callbacks. You will also need to set the delegate for the NavGrid by calling `ngncSetDelegate(delegate: NGNavigationButtonDelegate)` This will have you implement the following functions which will behave exactly like the above 6 functions:
+* `ngdLeftButtonTouchDownInside()`
+* `ngdLeftButtonTouchUpOutside()`
+* `ngdLeftButtonTouchUpInside()`
+* `ngdRightButtonTouchDownInside()`
+* `ngdRightButtonTouchUpOutside()`
+* `ngdRightButtonTouchUpInside()`
 
 In addition, you can create custom titles for each view by setting the property **mNGTitle** in your NGViewController subclass.
 
@@ -65,10 +80,14 @@ Demo App
 
 The included project has a sample application with 9 colored screens and a snap navigation and align/disalign alternation included. The Search button will snap to the Search View Controller and the Profile icon will alternate between aligned and disaligned rows. Feel free to build off of this project or look at the code for samples of usage.
 
+If you would like to try the Composition design style, the included NavGridSampleCompositionNavigationController contains an example of how to implement the NavGrid in this fashion.
+
 Contact
 =======
 
 My (rarely used) [Twitter](https://twitter.com/PatrickBUSC)
+
+If you have questions regarding the NavGrid or run into any issues, please create an issue and I'm happy to help as soon as I'm able! For any suggestions you have regarding the future development of the NavGrid, please leave those as a comment on the Suggestions issue. The NavGrid is built to be a comprehensive starting point for many iOS apps, and so I'm always looking to expand the functionality to fit what you as a designer or programmer need.
 
 License
 =======

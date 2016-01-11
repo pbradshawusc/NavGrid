@@ -26,7 +26,7 @@ protocol NGNavigationButtonDelegate {
 
 class NGNavigationController : UIViewController {
     // MARK: Initialization
-    internal var mNGInitialized = false
+    private var mNGInitialized = false
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         ngncInitializationImplementation()
@@ -37,7 +37,7 @@ class NGNavigationController : UIViewController {
         ngncInitializationImplementation()
     }
     
-    internal func ngncInitializationImplementation() {
+    private func ngncInitializationImplementation() {
         if !mNGInitialized {
             mNGInitialized = true
             
@@ -50,14 +50,14 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Top Navigation Bar
-    internal let mNGNavBarHeight = CGFloat(44)
-    internal var mNGNavigationHeader : UIView?
-    internal var mNGStatusBarBackground : UIView?
-    internal var mNGLightStatusBar = true
-    internal var mNGLeftButton : UIButton?
-    internal var mNGRightButton : UIButton?
-    internal var mNGCenterLabel : UILabel?
-    internal var mNGButtonDelegate : NGNavigationButtonDelegate?
+    private let mNGNavBarHeight = CGFloat(44)
+    private var mNGNavigationHeader : UIView?
+    private var mNGStatusBarBackground : UIView?
+    private var mNGLightStatusBar = true
+    private var mNGLeftButton : UIButton?
+    private var mNGRightButton : UIButton?
+    private var mNGCenterLabel : UILabel?
+    private var mNGButtonDelegate : NGNavigationButtonDelegate?
     
     func ngncResetNavigationHeaderToDefaults() {
         // Clear the old header if one exists
@@ -128,6 +128,14 @@ class NGNavigationController : UIViewController {
     
     func ngncSetDelegate(delegate: NGNavigationButtonDelegate) {
         mNGButtonDelegate = delegate
+        mNGLeftButton?.removeTarget(self, action: Selector(), forControlEvents: UIControlEvents.AllEvents)
+        mNGLeftButton?.addTarget(self, action: "ngncPrivateLeftButtonTouchUpInside", forControlEvents: .TouchUpInside)
+        mNGLeftButton?.addTarget(self, action: "ngncPrivateLeftButtonTouchUpOutside", forControlEvents: .TouchUpOutside)
+        mNGLeftButton?.addTarget(self, action: "ngncPrivateLeftButtonTouchDown", forControlEvents: .TouchDown)
+        mNGRightButton?.removeTarget(self, action: Selector(), forControlEvents: UIControlEvents.AllEvents)
+        mNGRightButton?.addTarget(self, action: "ngncPrivateRightButtonTouchUpInside", forControlEvents: .TouchUpInside)
+        mNGRightButton?.addTarget(self, action: "ngncPrivateRightButtonTouchUpOutside", forControlEvents: .TouchUpOutside)
+        mNGRightButton?.addTarget(self, action: "ngncPrivateRightButtonTouchDown", forControlEvents: .TouchDown)
     }
     
     func ngncShowLeftButton(show: Bool, animated: Bool) {
@@ -178,15 +186,27 @@ class NGNavigationController : UIViewController {
         return mNGLeftButton
     }
     
-    internal func ngncLeftButtonTouchDown() {
+    func ngncLeftButtonTouchDown() {
+        // STUB
+    }
+    
+    func ngncLeftButtonTouchUpOutside() {
+        // STUB
+    }
+    
+    func ngncLeftButtonTouchUpInside() {
+        // STUB
+    }
+    
+    @objc private func ngncPrivateLeftButtonTouchDown() {
         mNGButtonDelegate?.ngdLeftButtonTouchDown()
     }
     
-    internal func ngncLeftButtonTouchUpOutside() {
+    @objc private func ngncPrivateLeftButtonTouchUpOutside() {
         mNGButtonDelegate?.ngdLeftButtonTouchUpOutside()
     }
     
-    internal func ngncLeftButtonTouchUpInside() {
+    @objc private func ngncPrivateLeftButtonTouchUpInside() {
         mNGButtonDelegate?.ngdLeftButtonTouchUpInside()
     }
     
@@ -238,15 +258,27 @@ class NGNavigationController : UIViewController {
         return mNGRightButton
     }
     
-    internal func ngncRightButtonTouchDown() {
+    func ngncRightButtonTouchDown() {
+        // STUB
+    }
+    
+    func ngncRightButtonTouchUpOutside() {
+        // STUB
+    }
+    
+    func ngncRightButtonTouchUpInside() {
+        // STUB
+    }
+    
+    @objc private func ngncPrivateRightButtonTouchDown() {
         mNGButtonDelegate?.ngdRightButtonTouchDown()
     }
     
-    internal func ngncRightButtonTouchUpOutside() {
+    @objc private func ngncPrivateRightButtonTouchUpOutside() {
         mNGButtonDelegate?.ngdRightButtonTouchUpOutside()
     }
     
-    internal func ngncRightButtonTouchUpInside() {
+    @objc private func ngncPrivateRightButtonTouchUpInside() {
         mNGButtonDelegate?.ngdRightButtonTouchUpInside()
     }
     
@@ -259,9 +291,9 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Setup
-    internal var mNGViewControllerGrid = Array<Array<NGViewController?>>()
-    internal var mNGTopViewController = (0, 0)
-    internal var mNGTopVCForRow = Array<Int>()
+    private var mNGViewControllerGrid = Array<Array<NGViewController?>>()
+    private var mNGTopViewController = (0, 0)
+    private var mNGTopVCForRow = Array<Int>()
     
     func ngncAppendNGViewControllerToLocation(x: Int, y: Int, vc: NGViewController) throws {
         // First check if a NGViewController already exists in this location, if so, throw an error
@@ -320,7 +352,7 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Navigation
-    internal var mNGRowsAligned = true
+    private(set) var mNGRowsAligned = true
     
     func ngncSetRowsAligned(aligned: Bool, animated: Bool) {
         if mNGRowsAligned == aligned {
@@ -694,7 +726,7 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Swipe Navigation
-    internal var mNGSwipeView : UIView?
+    private var mNGSwipeView : UIView?
     
     func ngncEnableSwipeNavigation() {
         if mNGSwipeView == nil {
@@ -732,7 +764,7 @@ class NGNavigationController : UIViewController {
         mNGSwipeView = nil
     }
     
-    internal func ngncSwipedLeft() {
+    @objc private func ngncSwipedLeft() {
         do {
             try ngncCycleRight()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -743,7 +775,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    internal func ngncSwipedRight() {
+    @objc private func ngncSwipedRight() {
         do {
             try ngncCycleLeft()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -754,7 +786,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    internal func ngncSwipedUp() {
+    @objc private func ngncSwipedUp() {
         do {
             try ngncCycleDown()
         } catch NGGridError.GridMoveAttemptPastBounds {
@@ -765,7 +797,7 @@ class NGNavigationController : UIViewController {
         }
     }
     
-    internal func ngncSwipedDown() {
+    @objc private func ngncSwipedDown() {
         do {
             try ngncCycleUp()
         } catch NGGridError.GridMoveAttemptPastBounds {
