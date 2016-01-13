@@ -9,7 +9,15 @@
 import Foundation
 import UIKit
 
+enum NavGridAlignment {
+    case Grid
+    case RowsDisaligned
+    case ColumnsDisaligned
+}
+
 class NavGridSampleNavigation : NGNavigationController {
+    var mGridAlignment : NavGridAlignment = .Grid
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -71,14 +79,28 @@ class NavGridSampleNavigation : NGNavigationController {
             fatalError()
         }
         
-        // Set our rows to be disaligned
-        ngncSetRowsAligned(false, animated: true)
+        // Set our rows to be disaligned, note that this will automatically set the columns to being aligned
+        ngncSetLeftButton(nil, title: "Rows Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+        mGridAlignment = .RowsDisaligned
+        rowsAligned = false
+        //columnsAligned = true
     }
     
     // MARK: Button Methods
     override func ngncLeftButtonTouchUpInside() {
-        // Toggle row alignment
-        ngncSetRowsAligned(!mNGRowsAligned, animated: true)
+        if mGridAlignment == .Grid {
+            ngncSetRowsAligned(false, animated: true)
+            ngncSetLeftButton(nil, title: "Rows Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .RowsDisaligned
+        } else if mGridAlignment == .RowsDisaligned {
+            ngncSetColumnsAligned(false, animated: true)
+            ngncSetLeftButton(nil, title: "Columns Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .ColumnsDisaligned
+        } else if mGridAlignment == .ColumnsDisaligned {
+            ngncSetColumnsAligned(true, animated: true)
+            ngncSetLeftButton(nil, title: "Grid", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .Grid
+        }
     }
     
     override func ngncRightButtonTouchUpInside() {

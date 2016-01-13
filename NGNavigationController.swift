@@ -164,8 +164,13 @@ class NGNavigationController : UIViewController {
     
     func ngncSetLeftButton(image: UIImage? = nil, title: String? = nil, state: UIControlState = .Normal, backgroundColor: UIColor? = nil, rounded: Bool = false) {
         if image != nil {
+            mNGLeftButton?.frame = CGRectMake(5.0, ngncGetStatusBarHeight() + 4.0, mNGNavBarHeight - 8.0, mNGNavBarHeight - 8.0)
             mNGLeftButton?.setImage(image, forState: state)
         } else if title != nil {
+            mNGLeftButton?.frame = CGRectMake(5.0, ngncGetStatusBarHeight() + 4.0, 2 * (mNGNavBarHeight - 8.0), mNGNavBarHeight - 8.0)
+            if mNGLeftButton?.imageForState(state) != nil {
+                mNGLeftButton?.setImage(nil, forState: state)
+            }
             mNGLeftButton?.setTitle(title, forState: state)
         }
         
@@ -236,8 +241,13 @@ class NGNavigationController : UIViewController {
     
     func ngncSetRightButton(image: UIImage? = nil, title: String? = nil, state: UIControlState = .Normal, backgroundColor: UIColor? = nil, rounded: Bool = false) {
         if image != nil {
+            mNGRightButton?.frame = CGRectMake(view.frame.width - (mNGNavBarHeight - 8.0) - 5.0, ngncGetStatusBarHeight() + 4.0, (mNGNavBarHeight - 8.0), mNGNavBarHeight - 8.0)
             mNGRightButton?.setImage(image, forState: state)
         } else if title != nil {
+            mNGRightButton?.frame = CGRectMake(view.frame.width - 2 * (mNGNavBarHeight - 8.0) - 5.0, ngncGetStatusBarHeight() + 4.0, 2 * (mNGNavBarHeight - 8.0), mNGNavBarHeight - 8.0)
+            if mNGRightButton?.imageForState(state) != nil {
+                mNGRightButton?.setImage(nil, forState: state)
+            }
             mNGRightButton?.setTitle(title, forState: state)
         }
         
@@ -294,6 +304,7 @@ class NGNavigationController : UIViewController {
     private var mNGViewControllerGrid = Array<Array<NGViewController?>>()
     private var mNGTopViewController = (0, 0)
     private var mNGTopVCForRow = Array<Int>()
+    private var mNGTopVCForColumn = Array<Int>()
     
     func ngncAppendNGViewControllerToLocation(x: Int, y: Int, vc: NGViewController) throws {
         // First check if a NGViewController already exists in this location, if so, throw an error
@@ -315,7 +326,7 @@ class NGNavigationController : UIViewController {
         // Prime the arrays to the proper lengths for the new View Controller
         while mNGViewControllerGrid.count - 1 < y {
             mNGViewControllerGrid.append(Array<NGViewController?>())
-            if mNGRowsAligned {
+            if !mNGRowsDisaligned {
                 mNGTopVCForRow.append(mNGTopViewController.1)
             } else {
                 mNGTopVCForRow.append(0)
@@ -323,6 +334,9 @@ class NGNavigationController : UIViewController {
         }
         while mNGViewControllerGrid[y].count - 1 < x {
             mNGViewControllerGrid[y].append(nil)
+            if mNGTopVCForColumn.count - 1 < x {
+                mNGTopVCForColumn.append(0)
+            }
         }
         
         // Assign the View Controller and return it
@@ -352,15 +366,34 @@ class NGNavigationController : UIViewController {
     }
     
     // MARK: Grid Navigation
-    private(set) var mNGRowsAligned = true
+    private var mNGRowsDisaligned = false
+    var rowsAligned : Bool {
+        get {
+            return !mNGRowsDisaligned
+        }
+        set(alignment) {
+            ngncSetRowsAligned(alignment, animated: false)
+        }
+    }
+    private var mNGColumnsDisaligned = false
+    var columnsAligned : Bool {
+        get {
+            return !mNGColumnsDisaligned
+        }
+        set(alignment) {
+            ngncSetColumnsAligned(alignment, animated: false)
+        }
+    }
     
     func ngncSetRowsAligned(aligned: Bool, animated: Bool) {
-        if mNGRowsAligned == aligned {
+        if !mNGRowsDisaligned == aligned {
             return
+        } else if !mNGColumnsDisaligned && !aligned {
+            ngncSetColumnsAligned(true, animated: false)
         }
         
-        mNGRowsAligned = aligned
-        if mNGRowsAligned {
+        mNGRowsDisaligned = !aligned
+        if !mNGRowsDisaligned {
             // Set the locations of all view controllers in the grid relative to the current top view controller
             if animated {
                 UIView.animateWithDuration(0.25, animations: { () -> Void in
@@ -377,6 +410,10 @@ class NGNavigationController : UIViewController {
                     }, completion: { (completed) -> Void in
                         for i in 0...self.mNGTopVCForRow.count - 1 {
                             self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                        }
+                        
+                        for i in 0...self.mNGTopVCForColumn.count - 1 {
+                            self.mNGTopVCForColumn[i] = self.mNGTopViewController.1
                         }
                 })
             } else {
@@ -395,6 +432,67 @@ class NGNavigationController : UIViewController {
                 for i in 0...mNGTopVCForRow.count - 1 {
                     mNGTopVCForRow[i] = mNGTopViewController.0
                 }
+                
+                // Now reset the top view controller for each column to the current top view controller's row
+                for i in 0...mNGTopVCForColumn.count - 1 {
+                    mNGTopVCForColumn[i] = mNGTopViewController.1
+                }
+            }
+        }
+    }
+    
+    func ngncSetColumnsAligned(aligned: Bool, animated: Bool) {
+        if !mNGColumnsDisaligned == aligned {
+            return
+        } else if mNGRowsDisaligned && !aligned {
+            ngncSetRowsAligned(true, animated: false)
+        }
+        
+        mNGColumnsDisaligned = !aligned
+        if !mNGColumnsDisaligned {
+            // Set the locations of all view controllers in the grid relative to the current top view controller
+            if animated {
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    for i in 0...self.mNGViewControllerGrid.count - 1 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i][j] != nil && !(i == self.mNGTopViewController.1 && j == self.mNGTopViewController.0) {
+                                // This is a valid view controller, set its new location
+                                let yDist = CGFloat(i - self.mNGTopViewController.1)
+                                // Negative xDist corresponds to a controller to the right of the top controller
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.y = self.ngncGetNavBarHeightWithStatusBar() + (yDist * (self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar()))
+                            }
+                        }
+                    }
+                    }, completion: { (completed) -> Void in
+                        for i in 0...self.mNGTopVCForRow.count - 1 {
+                            self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                        }
+                        
+                        for i in 0...self.mNGTopVCForColumn.count - 1 {
+                            self.mNGTopVCForColumn[i] = self.mNGTopViewController.1
+                        }
+                })
+            } else {
+                for i in 0...mNGViewControllerGrid.count - 1 {
+                    for j in 0...mNGViewControllerGrid[i].count - 1 {
+                        if mNGViewControllerGrid[i][j] != nil && !(i == mNGTopViewController.1 && j == mNGTopViewController.0) {
+                            // This is a valid view controller, set its new location
+                            let xDist = CGFloat(j - self.mNGTopViewController.0)
+                            // Negative xDist corresponds to a controller to the right of the top controller
+                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.x = (xDist * self.view.frame.width)
+                        }
+                    }
+                }
+                
+                // Now reset the top view controller for each row to the current top view controller's column
+                for i in 0...mNGTopVCForRow.count - 1 {
+                    mNGTopVCForRow[i] = mNGTopViewController.0
+                }
+                
+                // Now reset the top view controller for each column to the current top view controller's row
+                for i in 0...mNGTopVCForColumn.count - 1 {
+                    mNGTopVCForColumn[i] = mNGTopViewController.1
+                }
             }
         }
     }
@@ -410,11 +508,21 @@ class NGNavigationController : UIViewController {
         
         // Notify the view controllers that will appear and disappear
         mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 - 1]?.viewWillBecomeActive()
+        if mNGColumnsDisaligned {
+            mNGViewControllerGrid[mNGTopVCForColumn[mNGTopViewController.0 - 1]][mNGTopViewController.0 - 1]?.viewWillBecomeActive()
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 - 1]?.viewWillBecomeActive()
+        }
         
         // Cycle over all view controllers and shift them to the left by subframe width
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            if self.mNGRowsAligned {
+            if self.mNGRowsDisaligned {
+                for i in 0...self.mNGViewControllerGrid[self.mNGTopViewController.1].count - 1 {
+                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x += self.view.frame.width
+                    }
+                }
+            } else {
                 for i in 0...self.mNGViewControllerGrid.count - 1 {
                     if self.mNGViewControllerGrid[i].count > 0 {
                         for j in 0...self.mNGViewControllerGrid[i].count - 1 {
@@ -424,22 +532,22 @@ class NGNavigationController : UIViewController {
                         }
                     }
                 }
-            } else {
-                for i in 0...self.mNGViewControllerGrid[self.mNGTopViewController.1].count - 1 {
-                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
-                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x += self.view.frame.width
-                    }
-                }
             }
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
                 self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 - 1]?.viewDidBecomeActive()
+                if self.mNGColumnsDisaligned {
+                    self.mNGViewControllerGrid[self.mNGTopVCForColumn[self.mNGTopViewController.0 - 1]][self.mNGTopViewController.0 - 1]?.viewDidBecomeActive()
+                    self.mNGTopViewController.1 = self.mNGTopVCForColumn[self.mNGTopViewController.0 - 1]
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 - 1]?.viewDidBecomeActive()
+                }
                 self.mNGTopViewController.0 -= 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
-                if self.mNGRowsAligned {
+                self.mNGTopVCForColumn[self.mNGTopViewController.0] = self.mNGTopViewController.1
+                if !self.mNGRowsDisaligned && !self.mNGColumnsDisaligned {
                     for i in 0...self.mNGViewControllerGrid.count-1 {
                         self.mNGTopVCForRow[i] = self.mNGTopViewController.0
                     }
@@ -461,11 +569,21 @@ class NGNavigationController : UIViewController {
         
         // Notify the view controllers that will appear and disappear
         mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
-        mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 + 1]?.viewWillBecomeActive()
+        if mNGColumnsDisaligned {
+            mNGViewControllerGrid[mNGTopVCForColumn[mNGTopViewController.0 + 1]][mNGTopViewController.0 + 1]?.viewWillBecomeActive()
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0 + 1]?.viewWillBecomeActive()
+        }
         
         // Cycle over all view controllers and shift them to the right by subframe width
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            if self.mNGRowsAligned {
+            if self.mNGRowsDisaligned {
+                for i in 0...self.mNGViewControllerGrid[self.mNGTopViewController.1].count - 1 {
+                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x -= self.view.frame.width
+                    }
+                }
+            } else {
                 for i in 0...self.mNGViewControllerGrid.count - 1 {
                     if self.mNGViewControllerGrid[i].count > 0 {
                         for j in 0...self.mNGViewControllerGrid[i].count - 1 {
@@ -475,22 +593,22 @@ class NGNavigationController : UIViewController {
                         }
                     }
                 }
-            } else {
-                for i in 0...self.mNGViewControllerGrid[self.mNGTopViewController.1].count - 1 {
-                    if self.mNGViewControllerGrid[self.mNGTopViewController.1][i] != nil {
-                        self.mNGViewControllerGrid[self.mNGTopViewController.1][i]!.view.frame.origin.x -= self.view.frame.width
-                    }
-                }
             }
             self.mNGCenterLabel?.alpha = 0.0
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
                 self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
-                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 + 1]?.viewDidBecomeActive()
+                if self.mNGColumnsDisaligned {
+                    self.mNGViewControllerGrid[self.mNGTopVCForColumn[self.mNGTopViewController.0 + 1]][self.mNGTopViewController.0 + 1]?.viewDidBecomeActive()
+                    self.mNGTopViewController.1 = self.mNGTopVCForColumn[self.mNGTopViewController.0 + 1]
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0 + 1]?.viewDidBecomeActive()
+                }
                 self.mNGTopViewController.0 += 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
                 self.mNGTopVCForRow[self.mNGTopViewController.1] = self.mNGTopViewController.0
-                if self.mNGRowsAligned {
+                self.mNGTopVCForColumn[self.mNGTopViewController.0] = self.mNGTopViewController.1
+                if !self.mNGRowsDisaligned && !self.mNGColumnsDisaligned {
                     for i in 0...self.mNGViewControllerGrid.count-1 {
                         self.mNGTopVCForRow[i] = self.mNGTopViewController.0
                     }
@@ -515,19 +633,38 @@ class NGNavigationController : UIViewController {
         
         // Notify the view controllers that will appear and disappear
         mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
-        if mNGRowsAligned {
-            mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopViewController.0]?.viewWillBecomeActive()
-        } else {
+        if mNGRowsDisaligned {
             mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopVCForRow[mNGTopViewController.1 - 1]]?.viewWillBecomeActive()
+            /*
+             * This section is commented out, but if uncommented should allow for automatic movement to a valid view above the current row, which currently is nullified byt the checks for nil at the beginning of the function
+            if mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopVCForRow[mNGTopViewController.1 - 1]]!.view.frame.origin.x != 0 {
+                let xDist = -mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopVCForRow[mNGTopViewController.1 - 1]]!.view.frame.origin.x
+                for i in 0...mNGViewControllerGrid[mNGTopViewController.1 - 1].count - 1 {
+                    if mNGViewControllerGrid[mNGTopViewController.1 - 1][i] != nil {
+                        mNGViewControllerGrid[mNGTopViewController.1 - 1][i]!.view.frame.origin.x -= xDist
+                    }
+                }
+            }
+             */
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1 - 1][mNGTopViewController.0]?.viewWillBecomeActive()
         }
         
         // Cycle over all view controllers and shift them down by subframe height
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            for i in 0...self.mNGViewControllerGrid.count - 1 {
-                if self.mNGViewControllerGrid[i].count > 0 {
-                    for j in 0...self.mNGViewControllerGrid[i].count - 1 {
-                        if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
-                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.y += (self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar())
+            if self.mNGColumnsDisaligned {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count - 1 >= self.mNGTopViewController.0 {
+                        self.mNGViewControllerGrid[i][self.mNGTopViewController.0]!.view.frame.origin.y += self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar()
+                    }
+                }
+            } else {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count > 0 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.y += (self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar())
+                            }
                         }
                     }
                 }
@@ -536,14 +673,15 @@ class NGNavigationController : UIViewController {
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
                 self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
-                if self.mNGRowsAligned {
-                    self.mNGViewControllerGrid[self.mNGTopViewController.1 - 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
-                } else {
+                if self.mNGRowsDisaligned {
                     self.mNGViewControllerGrid[self.mNGTopViewController.1 - 1][self.mNGTopVCForRow[self.mNGTopViewController.1 - 1]]?.viewDidBecomeActive()
                     self.mNGTopViewController.0 = self.mNGTopVCForRow[self.mNGTopViewController.1 - 1]
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 - 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
                 }
                 self.mNGTopViewController.1 -= 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                self.mNGTopVCForColumn[self.mNGTopViewController.0] = self.mNGTopViewController.1
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -564,19 +702,38 @@ class NGNavigationController : UIViewController {
         
         // Notify the view controllers that will appear and disappear
         mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
-        if mNGRowsAligned {
-            mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopViewController.0]?.viewWillBecomeActive()
-        } else {
+        if mNGRowsDisaligned {
             mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopVCForRow[mNGTopViewController.1 + 1]]?.viewWillBecomeActive()
+            /*
+             * This section is commented out, but if uncommented should allow for automatic movement to a valid view below the current row, which currently is nullified byt the checks for nil at the beginning of the function
+            if mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopVCForRow[mNGTopViewController.1 + 1]]!.view.frame.origin.x != 0 {
+                let xDist = -mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopVCForRow[mNGTopViewController.1 + 1]]!.view.frame.origin.x
+                for i in 0...mNGViewControllerGrid[mNGTopViewController.1 + 1].count - 1 {
+                    if mNGViewControllerGrid[mNGTopViewController.1 + 1][i] != nil {
+                        mNGViewControllerGrid[mNGTopViewController.1 + 1][i]!.view.frame.origin.x -= xDist
+                    }
+                }
+            }
+             */
+        } else {
+            mNGViewControllerGrid[mNGTopViewController.1 + 1][mNGTopViewController.0]?.viewWillBecomeActive()
         }
         
         // Cycle over all view controllers and shift them up by subframe height
         UIView.animateWithDuration(0.25, animations: { () -> Void in
-            for i in 0...self.mNGViewControllerGrid.count - 1 {
-                if self.mNGViewControllerGrid[i].count > 0 {
-                    for j in 0...self.mNGViewControllerGrid[i].count - 1 {
-                        if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
-                            self.mNGViewControllerGrid[i][j]!.view.frame.origin.y -= (self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar())
+            if self.mNGColumnsDisaligned {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count - 1 >= self.mNGTopViewController.0 {
+                        self.mNGViewControllerGrid[i][self.mNGTopViewController.0]!.view.frame.origin.y -= self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar()
+                    }
+                }
+            } else {
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count > 0 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.y -= (self.view.frame.height - self.ngncGetNavBarHeightWithStatusBar())
+                            }
                         }
                     }
                 }
@@ -585,14 +742,15 @@ class NGNavigationController : UIViewController {
             }) { (completed) -> Void in
                 // Notify the view controllers that they did appear and disappear
                 self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
-                if self.mNGRowsAligned {
-                    self.mNGViewControllerGrid[self.mNGTopViewController.1 + 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
-                } else {
+                if self.mNGRowsDisaligned {
                     self.mNGViewControllerGrid[self.mNGTopViewController.1 + 1][self.mNGTopVCForRow[self.mNGTopViewController.1 + 1]]?.viewDidBecomeActive()
                     self.mNGTopViewController.0 = self.mNGTopVCForRow[self.mNGTopViewController.1 + 1]
+                } else {
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1 + 1][self.mNGTopViewController.0]?.viewDidBecomeActive()
                 }
                 self.mNGTopViewController.1 += 1
                 self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                self.mNGTopVCForColumn[self.mNGTopViewController.0] = self.mNGTopViewController.1
                 UIView.animateWithDuration(0.15, animations: { () -> Void in
                     self.mNGCenterLabel?.alpha = 1.0
                 })
@@ -615,40 +773,10 @@ class NGNavigationController : UIViewController {
         mNGViewControllerGrid[mNGTopViewController.1][mNGTopViewController.0]?.viewWillResignActive()
         mNGViewControllerGrid[y][x]?.viewWillBecomeActive()
         
-        if mNGRowsAligned {
-            // Cycle over all view controllers and shift them by subframe height and width accordingly
-            let xDist = mNGViewControllerGrid[y][x]!.view.frame.origin.x
-            let yDist = mNGViewControllerGrid[y][x]!.view.frame.origin.y - ngncGetNavBarHeightWithStatusBar()
-            UIView.animateWithDuration(0.25, animations: { () -> Void in
-                for i in 0...self.mNGViewControllerGrid.count - 1 {
-                    if self.mNGViewControllerGrid[i].count > 0 {
-                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
-                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
-                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= xDist
-                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.y -= yDist
-                            }
-                        }
-                    }
-                }
-                self.mNGCenterLabel?.alpha = 0.0
-                }) { (completed) -> Void in
-                    // Notify the view controllers that they did appear and disappear
-                    self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
-                    self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
-                    self.mNGTopViewController = (x, y)
-                    self.mNGTopVCForRow[y] = x
-                    self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
-                    for i in 0...self.mNGTopVCForRow.count - 1 {
-                        self.mNGTopVCForRow[i] = self.mNGTopViewController.0
-                    }
-                    UIView.animateWithDuration(0.15, animations: { () -> Void in
-                        self.mNGCenterLabel?.alpha = 1.0
-                    })
-            }
-        } else {
+        if mNGRowsDisaligned {
             // First navigate to the proper row
             let yDist = mNGViewControllerGrid[y][x]!.view.frame.origin.y - ngncGetNavBarHeightWithStatusBar()
-            let xDist = self.mNGViewControllerGrid[y][x]!.view.frame.origin.x - self.mNGViewControllerGrid[y][self.mNGTopVCForRow[y]]!.view.frame.origin.x
+            let xDist = self.mNGViewControllerGrid[y][x]!.view.frame.origin.x
             if yDist != 0 && xDist != 0 {
                 UIView.animateWithDuration(0.1, animations: { () -> Void in
                     for i in 0...self.mNGViewControllerGrid.count - 1 {
@@ -721,6 +849,118 @@ class NGNavigationController : UIViewController {
                             self.mNGCenterLabel?.alpha = 1.0
                         })
                 })
+            }
+        } else if mNGColumnsDisaligned {
+            // TODO
+            let yDist = mNGViewControllerGrid[y][x]!.view.frame.origin.y - ngncGetNavBarHeightWithStatusBar()
+            let xDist = self.mNGViewControllerGrid[y][x]!.view.frame.origin.x - self.mNGViewControllerGrid[y][self.mNGTopViewController.0]!.view.frame.origin.x
+            if yDist != 0 && xDist != 0 {
+                // First navigate to the proper column, then the proper row
+                UIView.animateWithDuration(0.1, animations: { () -> Void in
+                    for i in 0...self.mNGViewControllerGrid.count - 1 {
+                        if self.mNGViewControllerGrid[i].count > 0 {
+                            for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                                if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                    self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= xDist
+                                }
+                            }
+                        }
+                    }
+                    self.mNGCenterLabel?.alpha = 0.0
+                    }, completion: { (verticalMoveCompleted) -> Void in
+                        // Next navigate to the proper row
+                        UIView.animateWithDuration(0.15, animations: { () -> Void in
+                            for i in 0...self.mNGViewControllerGrid.count - 1 {
+                                if self.mNGViewControllerGrid[i].count - 1 >= x {
+                                    self.mNGViewControllerGrid[i][x]!.view.frame.origin.y -= yDist
+                                }
+                            }
+                            }, completion: { (horizontalMoveCompleted) -> Void in
+                                self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                                self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
+                                self.mNGTopViewController = (x, y)
+                                self.mNGTopVCForRow[y] = x
+                                self.mNGTopVCForColumn[x] = y
+                                self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                                UIView.animateWithDuration(0.15, animations: { () -> Void in
+                                    self.mNGCenterLabel?.alpha = 1.0
+                                })
+                        })
+                })
+            } else if xDist != 0 {
+                // All we need to do is change columns, we are in the proper row already
+                // First navigate to the proper column, then the proper row
+                UIView.animateWithDuration(0.1, animations: { () -> Void in
+                    for i in 0...self.mNGViewControllerGrid.count - 1 {
+                        if self.mNGViewControllerGrid[i].count > 0 {
+                            for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                                if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                    self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= xDist
+                                }
+                            }
+                        }
+                    }
+                    self.mNGCenterLabel?.alpha = 0.0
+                    }, completion: { (verticalMoveCompleted) -> Void in
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                        self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
+                        self.mNGTopViewController = (x, y)
+                        self.mNGTopVCForRow[y] = x
+                        self.mNGTopVCForColumn[x] = y
+                        self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                        UIView.animateWithDuration(0.15, animations: { () -> Void in
+                            self.mNGCenterLabel?.alpha = 1.0
+                        })
+                })
+            } else if yDist != 0 {
+                // All we need to do is change rows, we are in the proper column already
+                UIView.animateWithDuration(0.25, animations: { () -> Void in
+                    for i in 0...self.mNGViewControllerGrid.count - 1 {
+                        if self.mNGViewControllerGrid[i].count - 1 >= x {
+                            self.mNGViewControllerGrid[i][x]!.view.frame.origin.y -= yDist
+                        }
+                    }
+                    }, completion: { (horizontalMoveCompleted) -> Void in
+                        self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                        self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
+                        self.mNGTopViewController = (x, y)
+                        self.mNGTopVCForRow[y] = x
+                        self.mNGTopVCForColumn[x] = y
+                        self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                        UIView.animateWithDuration(0.15, animations: { () -> Void in
+                            self.mNGCenterLabel?.alpha = 1.0
+                        })
+                })
+            }
+        } else {
+            // Cycle over all view controllers and shift them by subframe height and width accordingly
+            let xDist = mNGViewControllerGrid[y][x]!.view.frame.origin.x
+            let yDist = mNGViewControllerGrid[y][x]!.view.frame.origin.y - ngncGetNavBarHeightWithStatusBar()
+            UIView.animateWithDuration(0.25, animations: { () -> Void in
+                for i in 0...self.mNGViewControllerGrid.count - 1 {
+                    if self.mNGViewControllerGrid[i].count > 0 {
+                        for j in 0...self.mNGViewControllerGrid[i].count - 1 {
+                            if self.mNGViewControllerGrid[i].count > j && self.mNGViewControllerGrid[i][j] != nil {
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.x -= xDist
+                                self.mNGViewControllerGrid[i][j]!.view.frame.origin.y -= yDist
+                            }
+                        }
+                    }
+                }
+                self.mNGCenterLabel?.alpha = 0.0
+                }) { (completed) -> Void in
+                    // Notify the view controllers that they did appear and disappear
+                    self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]?.viewDidResignActive()
+                    self.mNGViewControllerGrid[y][x]?.viewDidBecomeActive()
+                    self.mNGTopViewController = (x, y)
+                    self.mNGTopVCForRow[y] = x
+                    self.mNGCenterLabel?.text = self.mNGViewControllerGrid[self.mNGTopViewController.1][self.mNGTopViewController.0]!.requestTitle()
+                    for i in 0...self.mNGTopVCForRow.count - 1 {
+                        self.mNGTopVCForRow[i] = self.mNGTopViewController.0
+                    }
+                    UIView.animateWithDuration(0.15, animations: { () -> Void in
+                        self.mNGCenterLabel?.alpha = 1.0
+                    })
             }
         }
     }

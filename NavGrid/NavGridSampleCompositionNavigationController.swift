@@ -11,11 +11,14 @@ import UIKit
 
 class NavGridSampleCompositionNavigationController : UIViewController, NGNavigationButtonDelegate {
     let mNavGrid = NGNavigationController()
+    var mGridAlignment : NavGridAlignment = .Grid
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Load our NavGrid into our view
+        //mNavGrid.view.frame = CGRectMake(15, 15, view.frame.width / 5.0, view.frame.height / 5.0) // Testing for behaviour purposes
+        //mNavGrid.ngncResetNavigationHeaderToDefaults() // Testing for behaviour purposes
         view.addSubview(mNavGrid.view)
         
         // Implement your own behavior for adding view controllers here
@@ -82,7 +85,15 @@ class NavGridSampleCompositionNavigationController : UIViewController, NGNavigat
         }
         
         // Set our rows to be disaligned
-        mNavGrid.ngncSetRowsAligned(false, animated: true)
+        mNavGrid.ngncSetLeftButton(nil, title: "Rows Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+        mGridAlignment = .RowsDisaligned
+        mNavGrid.rowsAligned = false
+        //mNavGrid.columnsAligned = true
+    }
+    
+    // MARK: Status Bar
+    override func preferredStatusBarStyle() -> UIStatusBarStyle {
+        return UIStatusBarStyle.LightContent
     }
     
     // MARK: Button Delegate Methods
@@ -93,8 +104,19 @@ class NavGridSampleCompositionNavigationController : UIViewController, NGNavigat
         // STUB
     }
     func ngdLeftButtonTouchUpInside() {
-        // Toggle row alignment
-        mNavGrid.ngncSetRowsAligned(!mNavGrid.mNGRowsAligned, animated: true)
+        if mGridAlignment == .Grid {
+            mNavGrid.ngncSetRowsAligned(false, animated: true)
+            mNavGrid.ngncSetLeftButton(nil, title: "Rows Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .RowsDisaligned
+        } else if mGridAlignment == .RowsDisaligned {
+            mNavGrid.ngncSetColumnsAligned(false, animated: true)
+            mNavGrid.ngncSetLeftButton(nil, title: "Columns Disaligned", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .ColumnsDisaligned
+        } else if mGridAlignment == .ColumnsDisaligned {
+            mNavGrid.ngncSetColumnsAligned(true, animated: true)
+            mNavGrid.ngncSetLeftButton(nil, title: "Grid", state: .Normal, backgroundColor: nil, rounded: false)
+            mGridAlignment = .Grid
+        }
     }
     func ngdRightButtonTouchDown() {
         // STUB
